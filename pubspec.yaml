@@ -25,6 +25,15 @@ dependencies:
   # for state managing
   provider: ^4.3.3
 
+  # for refreshing
+  pull_to_refresh: ^1.6.4
+
+  # for picking image
+  image_picker: ^0.6.7+22
+  
+  # for image caching
+  cached_network_image: ^2.5.0
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -37,6 +46,7 @@ flutter:
 
   assets:
     - google_fonts/
+    - assets/
 
   fonts:
     - family: Roboto

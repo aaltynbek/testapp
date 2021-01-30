@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:testapp/models/item_model.dart';
+import 'package:testapp/screens/add_item_screen.dart';
 import 'package:testapp/services/network_services.dart';
 import 'package:testapp/services/theme_manager.dart';
 import 'package:testapp/widgets/progress_indicator.dart';
@@ -18,6 +21,7 @@ class _ListScreenState extends State<ListScreen> {
   bool _isDark = false;
   List<Item> itemsList = [];
   bool isLoading = false;
+  RefreshController _refreshController = RefreshController(initialRefresh: false);
 
   @override
   void initState() {
@@ -46,6 +50,24 @@ class _ListScreenState extends State<ListScreen> {
       });
     });
   }
+  
+  _onRefresh(){
+    NetworkServices.getUsers().then((response) {
+      final String res = response.body.replaceAll('\\"', '');
+      LineSplitter ls = new LineSplitter();
+      List<String> lines = ls.convert(res);
+      String newStr = '';
+      for (var i = 0; i < lines.length; i++) {
+        var str = !(i==27 || i == 56 || i ==85)?'${lines[i]}':'",';
+        newStr = newStr + str;
+      }
+      final resJson = jsonDecode(newStr);
+      setState(() {
+        itemsList = itemFromList(resJson);
+      });
+      _refreshController.refreshCompleted();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,16 +76,25 @@ class _ListScreenState extends State<ListScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: Text("List"),
+          leading: Switch(
+            value: _isDark,
+            onChanged: (value){
+              setState(() {
+                _isDark ? context.read<ThemeNotifier>().setLightMode() : context.read<ThemeNotifier>().setDarkMode();
+                _isDark = value;
+              });
+            },
+          ),
           actions: [
-            Switch(
-              value: _isDark,
-              onChanged: (value){
-                setState(() {
-                  _isDark ? context.read<ThemeNotifier>().setLightMode() : context.read<ThemeNotifier>().setDarkMode();
-                  _isDark = value;
-                });
-              },
-            ),
+            IconButton(
+              icon: Icon(Icons.add), 
+              onPressed: (){
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AddItemScreen()),
+                );
+              }
+            )
           ], 
         ),
         body: SafeArea(
@@ -71,11 +102,34 @@ class _ListScreenState extends State<ListScreen> {
           child: isLoading? 
           CustomProgressIndicator()
           :
-          ListView.separated(
-            padding: EdgeInsets.only(top: 20),
-            itemCount: itemsList.length,
-            itemBuilder: (context, i) => _item(i),
-            separatorBuilder: (context, i) => SizedBox(height:20),
+          SmartRefresher(
+            enablePullDown: true,
+            enablePullUp: false,
+            controller: _refreshController,
+            onRefresh: _onRefresh,
+            header: WaterDropHeader(
+              complete: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  const Icon(
+                    Icons.done,
+                    color: Colors.grey,
+                  ),
+                  Container(
+                    width: 15.0,
+                  ),
+                  Text('Обновление завершено',
+                    style: TextStyle(color: Colors.grey),
+                  )
+                ],
+              ),
+            ),
+            child: ListView.separated(
+              padding: EdgeInsets.only(top: 20),
+              itemCount: itemsList.length,
+              itemBuilder: (context, i) => _item(i),
+              separatorBuilder: (context, i) => SizedBox(height:20),
+            ),
           ),
         ),
       ),
@@ -86,7 +140,9 @@ class _ListScreenState extends State<ListScreen> {
     return Dismissible(
       key: Key(itemsList[i].itemId),
       onDismissed: (direction){
-
+        setState(() {
+          itemsList.removeAt(i);
+        });
       },
       child: Align(
         alignment: Alignment.center,
@@ -129,7 +185,7 @@ class _ListScreenState extends State<ListScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(5),
             child: Image(
-              image: NetworkImage(item.image),
+              image: CachedNetworkImageProvider(item.image),
               width: 120,
               height: 85,
               fit: BoxFit.cover,
