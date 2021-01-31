@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -88,11 +89,17 @@ class _ListScreenState extends State<ListScreen> {
           actions: [
             IconButton(
               icon: Icon(Icons.add), 
-              onPressed: (){
-                Navigator.push(
+              onPressed: () async {
+                var result = await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => AddItemScreen()),
                 );
+
+                if(result is Item){
+                  setState(() {
+                    itemsList.insert(0, result);
+                  });
+                }
               }
             )
           ], 
@@ -185,7 +192,7 @@ class _ListScreenState extends State<ListScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(5),
             child: Image(
-              image: CachedNetworkImageProvider(item.image),
+              image: _image(item.image),
               width: 120,
               height: 85,
               fit: BoxFit.cover,
@@ -230,6 +237,13 @@ class _ListScreenState extends State<ListScreen> {
         ],
       ),
     );
+  }
+
+  _image(String image){
+    return image.contains('Users')?
+    FileImage(File(image))
+    :
+    CachedNetworkImageProvider(image);
   }
 
 }
