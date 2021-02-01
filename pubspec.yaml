@@ -20,7 +20,8 @@ dependencies:
   intl: ^0.16.1
   
   # for keeping data in storage
-  shared_preferences: ^0.5.12+4
+  # shared_preferences: ^0.5.12+4
+  flutter_secure_storage: ^3.3.5
   
   # for state managing
   provider: ^4.3.3
