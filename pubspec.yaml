@@ -34,6 +34,12 @@ dependencies:
   # for image caching
   cached_network_image: ^2.5.0
   
+  # for element swipe
+  carousel_slider: ^3.0.0
+  
+  # noSQL db
+  sembast: ^2.4.8+1
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

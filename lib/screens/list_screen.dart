@@ -6,8 +6,10 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:testapp/db/items_db.dart';
 import 'package:testapp/models/item_model.dart';
 import 'package:testapp/screens/add_item_screen.dart';
+import 'package:testapp/screens/item_screen.dart';
 import 'package:testapp/services/network_services.dart';
 import 'package:testapp/services/theme_manager.dart';
 import 'package:testapp/widgets/progress_indicator.dart';
@@ -18,54 +20,83 @@ class ListScreen extends StatefulWidget {
 }
 
 class _ListScreenState extends State<ListScreen> {
-
+  var db = ItemsDB();
   bool _isDark = false;
   List<Item> itemsList = [];
   bool isLoading = false;
   RefreshController _refreshController = RefreshController(initialRefresh: false);
+  List<Item> items = [];
 
   @override
   void initState() {
     super.initState();
-    initializeDateFormatting();    
+    initializeDateFormatting();
     _getItems();
   }
 
-  _getItems() {
+  _getItems() async {
     setState(() {
       isLoading = true;
     });
-    NetworkServices.getUsers().then((response) {
-      final String res = response.body.replaceAll('\\"', '');
-      LineSplitter ls = new LineSplitter();
-      List<String> lines = ls.convert(res);
-      String newStr = '';
-      for (var i = 0; i < lines.length; i++) {
-        var str = !(i==27 || i == 56 || i ==85)?'${lines[i]}':'",';
-        newStr = newStr + str;
+    await db.getAllItems().then(
+      (value) {
+        setState(() {
+          itemsList = value;
+          isLoading = false;
+        });
       }
-      final resJson = jsonDecode(newStr);
-      setState(() {
-        itemsList = itemFromList(resJson);
-        isLoading = false;
+    );
+    if(itemsList.isEmpty){
+      NetworkServices.getUsers().then((response) async {
+        //--- if i will use http://test.php-cd.attractgroup.com/test.json ---
+        // final String res = response.body.replaceAll('\\"', '');
+        // LineSplitter ls = new LineSplitter();
+        // List<String> lines = ls.convert(res);
+        // String newStr = '';
+        // for (var i = 0; i < lines.length; i++) {
+        //   var str = !(i==27 || i == 56 || i ==85)?'${lines[i]}':'",';
+        //   newStr = newStr + str;
+        // }
+        // final resJson = jsonDecode(newStr);
+        //--- if i will use http://test.php-cd.attractgroup.com/test.json ---
+
+        final resJson = jsonDecode(response.body);
+        await db.insertItems(itemFromList(resJson));
+        setState(() {
+          itemsList = itemFromList(resJson);
+          isLoading = false;
+        });
       });
-    });
+    }
   }
   
   _onRefresh(){
-    NetworkServices.getUsers().then((response) {
-      final String res = response.body.replaceAll('\\"', '');
-      LineSplitter ls = new LineSplitter();
-      List<String> lines = ls.convert(res);
-      String newStr = '';
-      for (var i = 0; i < lines.length; i++) {
-        var str = !(i==27 || i == 56 || i ==85)?'${lines[i]}':'",';
-        newStr = newStr + str;
-      }
-      final resJson = jsonDecode(newStr);
-      setState(() {
-        itemsList = itemFromList(resJson);
+    NetworkServices.getUsers().then((response) async {
+      //--- if i will use http://test.php-cd.attractgroup.com/test.json ---
+      // final String res = response.body.replaceAll('\\"', '');
+      // LineSplitter ls = new LineSplitter();
+      // List<String> lines = ls.convert(res);
+      // String newStr = '';
+      // for (var i = 0; i < lines.length; i++) {
+      //   var str = !(i==27 || i == 56 || i ==85)?'${lines[i]}':'",';
+      //   newStr = newStr + str;
+      // }
+      // final resJson = jsonDecode(newStr);
+      //--- if i will use http://test.php-cd.attractgroup.com/test.json ---
+
+      final resJson = jsonDecode(response.body);
+
+      await db.insertItems(itemFromList(resJson)).whenComplete(() async {
+        await db.getAllItems().then(
+          (value) {
+            print("refreshed");
+            setState(() {
+              itemsList = value;
+            });
+          }
+        );
       });
+      
       _refreshController.refreshCompleted();
     });
   }
@@ -78,11 +109,10 @@ class _ListScreenState extends State<ListScreen> {
         appBar: AppBar(
           title: Text("List"),
           leading: Switch(
-            value: _isDark,
+            value: context.read<ThemeNotifier>().isDarkMode,
             onChanged: (value){
               setState(() {
-                _isDark ? context.read<ThemeNotifier>().setLightMode() : context.read<ThemeNotifier>().setDarkMode();
-                _isDark = value;
+                context.read<ThemeNotifier>().isDarkMode ? context.read<ThemeNotifier>().setLightMode() : context.read<ThemeNotifier>().setDarkMode();
               });
             },
           ),
@@ -146,7 +176,8 @@ class _ListScreenState extends State<ListScreen> {
   _item(i){
     return Dismissible(
       key: Key(itemsList[i].itemId),
-      onDismissed: (direction){
+      onDismissed: (direction) async {
+        await db.deleteItem(itemsList[i]);
         setState(() {
           itemsList.removeAt(i);
         });
@@ -169,8 +200,13 @@ class _ListScreenState extends State<ListScreen> {
           child: Material(
             borderRadius: BorderRadius.circular(10),
             child: InkWell(
-              onTap: (){
+              onTap: () async{
+                var result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ItemScreen(items: itemsList, itemIndex: i)),
+                );
 
+                print("Edit result is $result");
               },
               child: _itemBody(itemsList[i]),
             ),
@@ -240,7 +276,7 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   _image(String image){
-    return image.contains('Users')?
+    return !Uri.parse(image).isAbsolute?
     FileImage(File(image))
     :
     CachedNetworkImageProvider(image);

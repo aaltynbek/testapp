@@ -20,6 +20,7 @@ class MyApp extends StatelessWidget {
       builder: (context, theme, _) => MaterialApp(
         title: 'Test Application',
         theme: theme.getTheme(),
+        debugShowCheckedModeBanner: false,
         home: ListScreen(),
       )
     );
