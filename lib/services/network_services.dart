@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:developer';
 
 import 'package:http/http.dart' as http;
@@ -7,7 +6,7 @@ import 'package:testapp/models/item_model.dart';
 class NetworkServices {
   
   static Future<http.Response> getUsers() {
-    var url = "http://test.php-cd.attractgroup.com/test.json";
+    // var url = "http://test.php-cd.attractgroup.com/test.json";
     var myUrl = "http://sxdm.kz/new.json";
     log("Get request is called for url $myUrl");
     return http.get(

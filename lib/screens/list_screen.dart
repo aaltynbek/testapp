@@ -22,7 +22,6 @@ class ListScreen extends StatefulWidget {
 
 class _ListScreenState extends State<ListScreen> {
   var db = ItemsDB();
-  bool _isDark = false;
   List<Item> itemsList = [];
   bool isLoading = false;
   RefreshController _refreshController = RefreshController(initialRefresh: false);
