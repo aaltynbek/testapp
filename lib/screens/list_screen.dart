@@ -11,6 +11,7 @@ import 'package:testapp/models/item_model.dart';
 import 'package:testapp/screens/add_item_screen.dart';
 import 'package:testapp/screens/item_screen.dart';
 import 'package:testapp/services/network_services.dart';
+import 'package:testapp/services/storage_manager.dart';
 import 'package:testapp/services/theme_manager.dart';
 import 'package:testapp/widgets/progress_indicator.dart';
 
@@ -35,6 +36,7 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   _getItems() async {
+    StorageManager.save('id', "12345");
     setState(() {
       isLoading = true;
     });
