@@ -1,5 +1,13 @@
 import {ThreeCanvas} from '@remotion/three';
-import {AbsoluteFill, interpolate, Sequence, useCurrentFrame, useVideoConfig} from 'remotion';
+import {
+	AbsoluteFill,
+	Audio,
+	interpolate,
+	Sequence,
+	staticFile,
+	useCurrentFrame,
+	useVideoConfig,
+} from 'remotion';
 import {Hook} from './scenes/Hook';
 import {Orbits} from './scenes/Orbits';
 import {Outro} from './scenes/Outro';
@@ -59,6 +67,8 @@ export const Promo: React.FC = () => {
 				);
 			})}
 			<AbsoluteFill style={{background: C.navy, opacity: fade}} />
+			{/* Озвучка: Piper TTS, голос kk_KZ issai (ISSAI KazakhTTS, CC BY 4.0) — см. README */}
+			<Audio src={staticFile('voiceover.mp3')} />
 		</AbsoluteFill>
 	);
 };
